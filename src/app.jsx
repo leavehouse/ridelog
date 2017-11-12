@@ -1,8 +1,16 @@
 import xs from 'xstream'
 
 export function App (sources) {
-  const domSource = sources.DOM;
+  const actions = intent(sources.DOM);
+  const state$ = model(actions);
+  const vtree$ = view(state$);
 
+  return {
+    DOM: vtree$
+  }
+}
+
+function intent(domSource) {
   const addRide$ = domSource.select('.add-ride').events('click')
     .map(() => {
       return {
@@ -26,9 +34,15 @@ export function App (sources) {
       }
     });
 
-  const action$ = xs.merge(addRide$, addPayment$);
+  return {
+      addRide$: addRide$,
+      addPayment$: addPayment$
+  };
+}
 
-  const state$ = action$.fold((actions, a) => {
+function model(actions) {
+  const action$ = xs.merge(actions.addRide$, actions.addPayment$);
+  return action$.fold((actions, a) => {
       if (a === null) {
           return actions;
       }
@@ -41,12 +55,22 @@ export function App (sources) {
     },
     { rides: [], payments: [] }
   );
+}
 
-  const vtree$ = state$.map(state => {
+function view(state$) {
+  return state$.map(state => {
     const rides = state.rides.slice().reverse().map(r =>
-      <li>{r.timestamp}</li>);
+      <li>
+        <label>{r.timestamp}</label>
+        <button className="delete-ride">×</button>
+      </li>);
+
     const payments = state.payments.slice().reverse().map(p =>
-      <li>{p.amount} - {p.timestamp}</li>);
+      <li>
+        <label>${p.amount} on {p.timestamp}</label>
+        <button className="delete-payment">×</button>
+      </li>);
+
     return (
       <div>
         <div className="controls">
@@ -58,9 +82,4 @@ export function App (sources) {
       </div>
     );
   });
-
-  const sinks = {
-    DOM: vtree$
-  }
-  return sinks
 }
