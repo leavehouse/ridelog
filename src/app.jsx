@@ -33,20 +33,41 @@ function intent(domSource) {
       }
     });
 
-  return xs.merge(addRide$, addPayment$);
+  const deleteRide$ = domSource.select('.delete-ride').events('click')
+    .map(ev => {
+      return {
+        type: 'deleteRide',
+        index: ev.target.parentElement.dataset.index,
+      }
+    });
+
+  const deletePayment$ = domSource.select('.delete-payment').events('click')
+    .map(ev => {
+      return {
+        type: 'deletePayment',
+        index: ev.target.parentElement.dataset.index,
+      }
+    });
+
+  return xs.merge(addRide$, addPayment$, deleteRide$, deletePayment$);
 }
 
+// TODO: use reducers?
 function model(action$) {
-  return action$.fold((actions, a) => {
+  return action$.fold((state, a) => {
       if (a === null) {
-          return actions;
+          return state;
       }
       if (a.type === 'addRide') {
-        actions.rides.push({timestamp: a.timestamp});
+        state.rides.push({timestamp: a.timestamp});
       } else if (a.type === 'addPayment') {
-        actions.payments.push({timestamp: a.timestamp, amount: a.amount});
+        state.payments.push({timestamp: a.timestamp, amount: a.amount});
+      } else if (a.type === 'deleteRide') {
+        state.rides.splice(a.index, 1);
+      } else if (a.type === 'deletePayment') {
+        state.payments.splice(a.index, 1);
       }
-      return actions;
+      return state;
     },
     { rides: [], payments: [] }
   );
@@ -54,14 +75,17 @@ function model(action$) {
 
 function view(state$) {
   return state$.map(state => {
-    const rides = state.rides.slice().reverse().map(r =>
-      <li>
+    const ridesList = state.rides.slice().map((r, i) => [r, i]);
+    const rides = ridesList.reverse().map(([r, i]) =>
+      <li data-index={i.toString()}>
         <label>{r.timestamp}</label>
         <button className="delete-ride">×</button>
-      </li>);
+      </li>
+    );
 
-    const payments = state.payments.slice().reverse().map(p =>
-      <li>
+    const paymentsList = state.payments.slice().map((p, i) => [p, i]);
+    const payments = paymentsList.reverse().map(([p, i]) =>
+      <li data-index={i.toString()}>
         <label>${p.amount} on {p.timestamp}</label>
         <button className="delete-payment">×</button>
       </li>);
