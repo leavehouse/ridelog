@@ -10,14 +10,13 @@ export function App (sources) {
   }
 }
 
+function getTimestamp() {
+    return new Date().toLocaleString()
+}
+
 function intent(domSource) {
   const addRide$ = domSource.select('.add-ride').events('click')
-    .map(() => {
-      return {
-        type: 'ride',
-        timestamp: new Date().toLocaleString()
-      }
-    });
+    .map(() => ({type: 'addRide', timestamp: getTimestamp()}));
 
   const addPayment$ = domSource.select('.add-payment').events('click')
     .map(() => {
@@ -28,27 +27,23 @@ function intent(domSource) {
           return null;
       }
       return {
-        type: 'payment',
-        timestamp: new Date().toLocaleString(),
+        type: 'addPayment',
+        timestamp: getTimestamp(),
         amount: parsed_amount,
       }
     });
 
-  return {
-      addRide$: addRide$,
-      addPayment$: addPayment$
-  };
+  return xs.merge(addRide$, addPayment$);
 }
 
-function model(actions) {
-  const action$ = xs.merge(actions.addRide$, actions.addPayment$);
+function model(action$) {
   return action$.fold((actions, a) => {
       if (a === null) {
           return actions;
       }
-      if (a.type === 'ride') {
+      if (a.type === 'addRide') {
         actions.rides.push({timestamp: a.timestamp});
-      } else if (a.type === 'payment') {
+      } else if (a.type === 'addPayment') {
         actions.payments.push({timestamp: a.timestamp, amount: a.amount});
       }
       return actions;
