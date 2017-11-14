@@ -72,26 +72,37 @@ function intent(domSource) {
   return xs.merge(addRide$, addPayment$, deleteRide$, deletePayment$);
 }
 
-// TODO: use reducers?
 function model(action$, storageData$) {
-  function updateState(state, a) {
-    if (a === null) {
-        return state;
-    }
-    if (a.type === 'addRide') {
-      state.rides.push({timestamp: a.timestamp});
-    } else if (a.type === 'addPayment') {
-      state.payments.push({timestamp: a.timestamp, amount: a.amount});
-    } else if (a.type === 'deleteRide') {
-      state.rides.splice(a.index, 1);
-    } else if (a.type === 'deletePayment') {
-      state.payments.splice(a.index, 1);
-    }
-    return state;
-  }
-
+  const addRideReducer$ = action$
+    .filter(action => action.type === 'addRide')
+    .map(action => state => {
+      state.rides.push({timestamp: action.timestamp});
+      return state;
+    });
+  const deleteRideReducer$ = action$
+    .filter(action => action.type === 'deleteRide')
+    .map(action => state => {
+      state.rides.splice(action.index, 1)
+      return state;
+    });
+  const addPaymentReducer$ = action$
+    .filter(action => action.type === 'addPayment')
+    .map(action => state => {
+      state.payments.push({timestamp: action.timestamp, amount: action.amount});
+      return state;
+    });
+  const deletePaymentReducer$ = action$
+    .filter(action => action.type === 'deletePayment')
+    .map(action => state => {
+      state.payments.splice(action.index, 1)
+      return state;
+    });
+  const reducer$ = xs.merge(addRideReducer$, deleteRideReducer$,
+                            addPaymentReducer$, deletePaymentReducer$);
   return storageData$.map(storageData =>
-    action$.fold(updateState, storageData)
+    reducer$
+      .fold((state, reducer) => reducer(state), storageData)
+      .debug('state')
   ).flatten();
 }
 
