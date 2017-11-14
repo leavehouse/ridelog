@@ -1,12 +1,22 @@
 import xs from 'xstream'
 
 export function App (sources) {
-  const actions = intent(sources.DOM);
-  const state$ = model(actions);
+  const storageData$ = sources.storage.local
+    .getItem('ridelog')
+    .take(1)
+    .map(str => JSON.parse(str) || { rides: [], payments: [] });
+
+  const action$ = intent(sources.DOM);
+  const state$ = model(action$, storageData$);
   const vtree$ = view(state$);
+  const storageRequest$ = state$.map(state => ({
+    key: 'ridelog',
+    value: JSON.stringify(state)
+  }));
 
   return {
-    DOM: vtree$
+    DOM: vtree$,
+    storage: storageRequest$,
   }
 }
 
@@ -63,24 +73,26 @@ function intent(domSource) {
 }
 
 // TODO: use reducers?
-function model(action$) {
-  return action$.fold((state, a) => {
-      if (a === null) {
-          return state;
-      }
-      if (a.type === 'addRide') {
-        state.rides.push({timestamp: a.timestamp});
-      } else if (a.type === 'addPayment') {
-        state.payments.push({timestamp: a.timestamp, amount: a.amount});
-      } else if (a.type === 'deleteRide') {
-        state.rides.splice(a.index, 1);
-      } else if (a.type === 'deletePayment') {
-        state.payments.splice(a.index, 1);
-      }
-      return state;
-    },
-    { rides: [], payments: [] }
-  );
+function model(action$, storageData$) {
+  function updateState(state, a) {
+    if (a === null) {
+        return state;
+    }
+    if (a.type === 'addRide') {
+      state.rides.push({timestamp: a.timestamp});
+    } else if (a.type === 'addPayment') {
+      state.payments.push({timestamp: a.timestamp, amount: a.amount});
+    } else if (a.type === 'deleteRide') {
+      state.rides.splice(a.index, 1);
+    } else if (a.type === 'deletePayment') {
+      state.payments.splice(a.index, 1);
+    }
+    return state;
+  }
+
+  return storageData$.map(storageData =>
+    action$.fold(updateState, storageData)
+  ).flatten();
 }
 
 function view(state$) {
