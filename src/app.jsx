@@ -21,31 +21,41 @@ function intent(domSource) {
   const addPayment$ = domSource.select('.add-payment').events('click')
     .map(() => {
       const amount = window.prompt("Payment amount:");
-      const parsed_amount = parseInt(amount, 10);
-      if (isNaN(parsed_amount)) {
+      const parsedAmount = parseInt(amount, 10);
+      if (isNaN(parsedAmount)) {
           window.alert("Submitted amount is not a valid integer.");
           return null;
       }
       return {
         type: 'addPayment',
         timestamp: getTimestamp(),
-        amount: parsed_amount,
+        amount: parsedAmount,
       }
     });
 
   const deleteRide$ = domSource.select('.delete-ride').events('click')
     .map(ev => {
-      return {
-        type: 'deleteRide',
-        index: ev.target.parentElement.dataset.index,
+      const confirmDelete = window.confirm("Please confirm that you want to delete this ride.");
+      if (confirmDelete) {
+        return {
+          type: 'deleteRide',
+          index: ev.target.parentElement.dataset.index,
+        }
+      } else {
+        return null;
       }
     });
 
   const deletePayment$ = domSource.select('.delete-payment').events('click')
     .map(ev => {
-      return {
-        type: 'deletePayment',
-        index: ev.target.parentElement.dataset.index,
+      const confirmDelete = window.confirm("Please confirm that you want to delete this payment.");
+      if (confirmDelete) {
+        return {
+          type: 'deletePayment',
+          index: ev.target.parentElement.dataset.index,
+        }
+      } else {
+        return null;
       }
     });
 
