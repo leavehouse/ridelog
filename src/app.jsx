@@ -52,7 +52,11 @@ function intent(domSource) {
           index: ev.target.parentElement.dataset.index,
         }
       } else {
-        return null;
+        // TODO: this is a hack, probably use a driver to contain the
+        // window.confirm calls?
+        return {
+          type: 'null',
+        }
       }
     });
 
@@ -65,7 +69,11 @@ function intent(domSource) {
           index: ev.target.parentElement.dataset.index,
         }
       } else {
-        return null;
+        // TODO: this is a hack, probably use a driver to contain the
+        // window.confirm calls?
+        return {
+          type: 'null',
+        }
       }
     });
 
