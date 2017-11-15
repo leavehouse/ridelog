@@ -1,5 +1,7 @@
 import xs from 'xstream'
 
+const rideFee = 3;
+
 export function App (sources) {
   const storageData$ = sources.storage.local
     .getItem('ridelog')
@@ -131,13 +133,19 @@ function view(state$) {
         <button className="delete-payment">×</button>
       </li>);
 
+    const paid = state.payments.reduce((sum, p) => sum + p.amount, 0);
+    const sum = (rideFee * state.rides.length) - paid;
+
     return (
       <div>
         <div className="controls">
           <button className="add-ride">Add Ride</button>
           <button className="add-payment">Add Payment</button>
         </div>
+        <div className="sum">${sum}</div>
+        <h1>Rides</h1>
         <ul>{rides}</ul>
+        <h1>Payments</h1>
         <ul>{payments}</ul>
       </div>
     );
